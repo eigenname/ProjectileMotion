@@ -1,10 +1,10 @@
 import importlib
 import pm_tools
 importlib.reload(pm_tools)
-from pm_tools import get_rounding_from_speed
+from pm_tools import get_rounding_from_speed, no_drag
 
 import numpy as np, pandas as pd, plotly.graph_objects as go
-from math import pi, radians, cos, sin, exp, atan, sqrt
+from math import pi, radians, exp, atan, sqrt
 from IPython.display import HTML
 
 class ProjectileMotion:
@@ -43,39 +43,13 @@ class ProjectileMotion:
         self.data = data.round({'t': time_decimals, 'x': position_decimals, 'y': position_decimals}) # Round all columns for display/analysis
 
     def simulate(self):
-        # Extract initial conditions and constants for ease of use
-        x, y = self.initial_position[0], self.initial_position[1]
-        vx = self.initial_speed * cos(self.launch_angle)
-        vy = self.initial_speed * sin(self.launch_angle)
-        g = self.gravity
-        dt = self.time_step
-        t = dt 
-        data = [[0, x, y]]
-
-        while y > -1:
-            x += vx * dt # update horizontal position, V
-            y += vy * dt + (0.5 * -g * dt**2) # update vertical position with gravity effect, VV
-
-            data.append([t, x, y]) # store time, horizontal position, and vertical position in data list
-            
-            vy += dt * -g # update vertical velocity, VV
-            t += dt # update time, VV
-
-
-
-        # Last two points
-        t1, x1, y1 = data[-2]
-        t2, x2, y2 = data[-1]
-
-        alpha = -y1 / (y2 - y1) # Interpolation factor
-
-        # Interpolated impact time and position
-        t_max = t1 + alpha * (t2 - t1)
-        x_max = x1 + alpha * (x2 - x1)
-
-        data[-1] = [t_max, x_max, 0] # Replace last point
-
-        return data
+        return no_drag(
+            initial_position=self.initial_position,
+            initial_speed=self.initial_speed,
+            launch_angle=self.launch_angle,
+            gravity=self.gravity,
+            time_step=self.time_step
+        )
 
     def animate(self):
         data = np.array(self.data)
