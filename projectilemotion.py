@@ -1,21 +1,22 @@
 import importlib
 import pm_tools
 importlib.reload(pm_tools)
-from pm_tools import get_rounding_from_speed, no_drag
+from pm_tools import get_rounding_from_speed, no_drag, const_drag, alt_drag # Import necessary functions from pm_tools.py
 
 import numpy as np, pandas as pd, plotly.graph_objects as go
-from math import pi, radians, exp, atan, sqrt
+from math import pi, radians
 from IPython.display import HTML
 
 class ProjectileMotion:
     def __init__(self, 
-                time_step: float, # in s
-
+                time_step: float = 0.1, # in s, time step for the simulation. Smaller values will yield smoother trajectories but will take longer to compute. Default is 0.1 s.
                 initial_position: list = [0,0], # in m, vector form [x,y]
                 initial_speed: float = 300, # in m/s, scalar value    
                 launch_angle: float = 45, # in degrees, angle of launch with respect to horizontal
-                diameter: float = 0.07, # in m
-                density: float = 7800, # in kg/m³
+                diameter: float = 0.07, # in m, diameter of the spherical projectile. Default is 0.07 m, which simulates a standard baseball.
+                density: float = 7800, # in kg/m³, density of the spherical projectile. Default is 7800 kg/m³, which simulates a standard baseball.
+                viscosity: float = 0.25, # in Ns²/m⁴, for medium that projectile is traversing through. Default is 0.25, which simulates air resistance.
+                altitude_threshold: float = 10e3, # in m, threshold when continuous drag starts to decrease exponentially to simulate thinning atmosphere. Default is 10,000 m.
         ):  
         # Initial Conditions
         self.initial_position = initial_position
@@ -30,30 +31,62 @@ class ProjectileMotion:
 
         # Constants
         self.gravity = 9.8 # in m/s²
-        self.viscosity = 0.25 # in Ns²/m⁴, for medium that projectile is traversing through
-        self.altitude_threshold = float(10e3) # in m
+        self.viscosity = viscosity 
         self.drag_coefficient = 0.5 * self.viscosity * (self.diameter**2) # in kg/m
+        self.altitude_threshold = altitude_threshold # in m
         
-        # Time parameters
         self.time_step = time_step
 
-        data = pd.DataFrame(self.simulate(), columns=['t', 'x', 'y'])
+        data = pd.DataFrame(self.simulate(), columns=['t', 'x', 'y', 'vx', 'vy', 'ax', 'ay']) # Run the simulation and store results in a DataFrame
         position_decimals = get_rounding_from_speed(self.initial_speed) # Determine number of decimal places
         time_decimals = int(round(-np.log10(self.time_step))) # Determine number of decimal places for time
-        self.data = data.round({'t': time_decimals, 'x': position_decimals, 'y': position_decimals}) # Round all columns for display/analysis
+        self.data = data.round({'t': time_decimals, # Round all columns for display/analysis
+                                'x': position_decimals, 'y': position_decimals,
+                                'vx': position_decimals, 'vy': position_decimals,
+                                'ax': position_decimals, 'ay': position_decimals
+                                })
 
     def simulate(self):
-        return no_drag(
-            initial_position=self.initial_position,
-            initial_speed=self.initial_speed,
-            launch_angle=self.launch_angle,
-            gravity=self.gravity,
-            time_step=self.time_step
-        )
+        if self.viscosity > 0 and self.altitude_threshold > 0: # if viscosity and altitude_threshold are greater than 0, we assume there is altitude-dependent drag.
+            self.color = 'green'
+            return alt_drag(
+                initial_position=self.initial_position,
+                initial_speed=self.initial_speed,
+                launch_angle=self.launch_angle,
+                gravity=self.gravity,
+                time_step=self.time_step,
+                mass=self.mass,
+                drag_coefficient=self.drag_coefficient,
+                altitude_threshold=self.altitude_threshold
+            )
+
+        elif self.viscosity > 0 and self.altitude_threshold == 0: # if viscosity is greater than 0 and altitude_threshold is 0, we assume there is constant drag.
+            self.color = 'blue'
+            return const_drag(
+                initial_position=self.initial_position,
+                initial_speed=self.initial_speed,
+                launch_angle=self.launch_angle,
+                gravity=self.gravity,
+                time_step=self.time_step,
+                mass=self.mass,
+                drag_coefficient=self.drag_coefficient
+            )
+        
+        else: # if viscosity/altitude_threshold is 0, we assume there is no drag.
+            self.color = 'red'
+            return no_drag(
+                initial_position=self.initial_position,
+                initial_speed=self.initial_speed,
+                launch_angle=self.launch_angle,
+                gravity=self.gravity,
+                time_step=self.time_step
+            )
+    
 
     def animate(self):
         data = np.array(self.data)
-        
+        color = self.color
+
         # Create frames: each frame shows trajectory up to index i and current position marker
         frames = []
         for i in range(1, len(data)):
@@ -75,14 +108,14 @@ class ProjectileMotion:
                         y=data[:i+1, 2], 
                         mode='lines', 
                         name='trajectory', 
-                        line=dict(color='red', width=1, dash='dash'),
+                        line=dict(color=color, width=1, dash='dash'),
                         showlegend=False,
                     ),
                     go.Scatter(
                         x=[data[i, 1]], 
                         y=[data[i, 2]], 
                         mode='markers', 
-                        marker=dict(color='red', size=10),
+                        marker=dict(color=color, size=10),
                         showlegend=False,
                         hoverinfo='skip'
                     )
@@ -102,14 +135,14 @@ class ProjectileMotion:
                     y=data[:1, 2], 
                     mode='lines', 
                     name='trajectory', 
-                    line=dict(color='red', width=1, dash='dash'),
+                    line=dict(color=color, width=1, dash='dash'),
                     showlegend=False,
                 ),
                 go.Scatter(
                     x=[data[0, 1]], 
                     y=[data[0, 2]], 
                     mode='markers', 
-                    marker=dict(color='red', size=10),
+                    marker=dict(color=color, size=10),
                     showlegend=False,
                     hoverinfo='skip'
                 )
