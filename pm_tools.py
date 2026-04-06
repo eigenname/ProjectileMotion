@@ -1,4 +1,3 @@
-import numpy as np
 from math import cos, sin, atan2, sqrt, exp, floor, log10
 
 def get_rounding_from_speed(value): # Determine the number of decimal places based on initial speed arg
