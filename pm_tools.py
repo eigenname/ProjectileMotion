@@ -1,10 +1,10 @@
 import numpy as np
-from math import cos, sin, atan2, sqrt, exp
+from math import cos, sin, atan2, sqrt, exp, floor, log10
 
 def get_rounding_from_speed(value): # Determine the number of decimal places based on initial speed arg
     if value == 0:
         return 0
-    return max(0, -np.floor(np.log10(abs(value))))
+    return max(0, -floor(log10(abs(value))))
 
 def no_drag(initial_position, initial_speed, launch_angle, gravity, time_step):
     # Create a simple projectile motion simulation without drag
