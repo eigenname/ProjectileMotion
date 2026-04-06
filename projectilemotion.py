@@ -85,6 +85,7 @@ class ProjectileMotion:
     def animate(self):
         data = np.array(self.data)
         color = self.color
+        fps = 30
 
         # Create frames: each frame shows trajectory up to index i and current position marker
         frames = []
@@ -170,7 +171,7 @@ class ProjectileMotion:
                         'label': 'Play', 
                         'method': 'animate', 
                         'args': [None, {
-                            'frame': {'duration': 60, 'redraw': True}, # adjust duration for smoother animation
+                            'frame': {'duration': fps, 'redraw': True}, # adjust duration for smoother animation
                             'fromcurrent': True,
                             'mode': 'immediate',
                             'transition': {'duration': 0}
