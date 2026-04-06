@@ -82,14 +82,13 @@ class ProjectileMotion:
                 time_step=self.time_step
             )
     
-
     def animate(self):
         data = np.array(self.data)
         color = self.color
 
         # Create frames: each frame shows trajectory up to index i and current position marker
         frames = []
-        for i in range(1, len(data)):
+        for i in range(len(data)):
             # Calculate dynamic axis ranges for this frame
             x_data = data[:i+1, 1]
             y_data = data[:i+1, 2]

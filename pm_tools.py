@@ -33,7 +33,7 @@ def no_drag(initial_position, initial_speed, launch_angle, gravity, time_step):
     t_max = t1 + alpha * (t2 - t1)
     x_max = x1 + alpha * (x2 - x1)
 
-    data[-1] = [t_max, x_max, 0, 0, 0, 0, -g] # Replace last point with interpolated impact point
+    data[-1] = [t_max, x_max, 0, 0, 0, 0, 0] # Replace last point with interpolated impact point
 
     return data
 
